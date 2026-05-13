@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA: Cronología Maestra Interactiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-purple: #bc13fe;
+            --bg-dark: #05070a;
+            --card-bg: #0f172a;
+            --border: #1e293b;
+            --text-gray: #94a3b8;
+            --accent-glow: rgba(0, 242, 255, 0.3);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Background animated elements */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #111827 0%, transparent 80%);
+            z-index: -1;
+        }
+
+        header {
+            padding: 120px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            background: linear-gradient(to right, var(--neon-blue), #3b82f6, var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px var(--accent-glow));
+        }
+
+        /* Timeline structure */
+        .timeline-container {
+            position: relative;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, var(--neon-blue), var(--neon-purple), var(--neon-blue), transparent);
+            z-index: 1;
+        }
+
+        .event-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 180px;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .event-card {
+            width: 44%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .event-card:hover {
+            border-color: var(--neon-blue);
+            transform: scale(1.03) translateY(-10px);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .event-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-body { padding: 25px; }
+
+        .left-event { flex-direction: row; }
+        .right-event { flex-direction: row-reverse; }
+
+        .dot {
+            width: 24px;
+            height: 24px;
+            background: var(--bg-dark);
+            border: 4px solid var(--neon-blue);
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        .year-label {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .btn-expand {
+            margin-top: 20px;
+            background: linear-gradient(45deg, var(--neon-purple), #6366f1);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: bold;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .btn-expand:hover {
+            letter-spacing: 1px;
+            filter: brightness(1.2);
+            box-shadow: 0 0 15px var(--neon-purple);
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.95);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            background: #111827;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 50px;
+            border-radius: 30px;
+            border: 1px solid var(--neon-blue);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 25px; right: 30px;
+            font-size: 2.5rem; color: var(--text-gray); cursor: pointer;
+        }
+
+        .cite-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: var(--neon-blue);
+            text-decoration: none;
+            font-weight: bold;
+            border-bottom: 1px dashed var(--neon-blue);
+        }
+
+        .cite-link:hover { color: white; border-bottom: 1px solid white; }
+
+        @media (max-width: 850px) {
+            .timeline-line { left: 30px; transform: none; }
+            .event-wrapper { flex-direction: row-reverse; }
+            .event-card { width: 85%; margin-left: 60px; }
+            .dot { left: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>La Odisea de la IA</h1>
+    <p style="color: var(--text-gray); font-size: 1.2rem; letter-spacing: 2px;">CRONOLOGÍA TÉCNICA DOCUMENTADA</p>
+</header>
+
+<div class="timeline-container">
+    <div class="timeline-line"></div>
+    <div id="timeline-target"></div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 id="modal-title" style="font-family: 'Orbitron'; color: var(--neon-blue);"></h2>
+        <p id="modal-detail" style="line-height: 1.8; color: #cbd5e1; font-size: 1.1rem;"></p>
+        <div id="modal-links"></div>
+    </div>
+</div>
+
+<script>
+    const aiEvents = [
+        { 
+            year: "1843", 
+            title: "Ada Lovelace", 
+            img: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=800",
+            desc: "Primer algoritmo para la Máquina Analítica.", 
+            technical: "Ada Lovelace publicó sus notas sobre la Máquina Analítica de Charles Babbage. En la 'Nota G', describió un algoritmo detallado para calcular los números de Bernoulli. Su genialidad fue comprender que si una máquina podía manipular números, también podía manipular cualquier símbolo (música, arte, lógica), sentando la base de la computación universal.",
+            source: "Science Museum UK",
+            url: "https://www.sciencemuseum.org.uk/objects-and-stories/ada-lovelace-visionary-computer-science"
+        },
+        { 
+            year: "1950", 
+            title: "El Test de Turing", 
+            img: "https://images.unsplash.com/photo-1555255707-c07966088b7b?auto=format&fit=crop&q=80&w=800",
+            desc: "¿Pueden las máquinas pensar?", 
+            technical: "Alan Turing publicó 'Computing Machinery and Intelligence'. Propuso el 'Juego de la Imitación' como una forma funcional de definir la inteligencia. Si una máquina puede engañar a un humano haciéndole creer que ella también es humana a través de una interfaz de texto, entonces debe considerarse 'inteligente'.",
+            source: "Stanford Encyclopedia of Philosophy",
+            url: "https://plato.stanford.edu/entries/turing-test/"
+        },
+        { 
+            year: "1956", 
+            title: "Taller de Dartmouth", 
+            img: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=800",
+            desc: "Nacimiento oficial del término IA.", 
+            technical: "John McCarthy, Marvin Minsky, Nathaniel Rochester y Claude Shannon organizaron una conferencia de dos meses en el Dartmouth College. Fue aquí donde McCarthy acuñó el término 'Inteligencia Artificial'. Su premisa era que cada aspecto del aprendizaje o cualquier otra característica de la inteligencia puede ser descrito con tal precisión que una máquina puede ser construida para simularlo.",
+            source: "Dartmouth University",
+            url: "https://250.dartmouth.edu/highlights/artificial-intelligence-ai-coined-dartmouth"
+        },
+        { 
+            year: "1986", 
+            title: "Backpropagation", 
+            img: "https://images.unsplash.com/photo-1509228463558-ce5ec3418b63?auto=format&fit=crop&q=80&w=800",
+            desc: "Renacimiento del Aprendizaje Profundo.", 
+            technical: "Geoffrey Hinton, David Rumelhart y Ronald Williams publicaron un artículo en Nature demostrando cómo el algoritmo de retropropagación (backpropagation) permitía entrenar redes neuronales multicapa de manera efectiva. Esto resolvió las limitaciones de los perceptrones simples de los años 60 y permitió el desarrollo del Deep Learning moderno.",
+            source: "Nature Research",
+            url: "https://www.nature.com/articles/323533a0"
+        },
+        { 
+            year: "1997", 
+            title: "Deep Blue vs Kasparov", 
+            img: "https://images.unsplash.com/photo-1529697210530-8c4bb1358ce5?auto=format&fit=crop&q=80&w=800",
+            desc: "La computadora derrota al campeón del mundo.", 
+            technical: "La supercomputadora Deep Blue de IBM derrotó a Garry Kasparov en un encuentro a seis partidas. Fue un hito para la IA basada en búsqueda heurística y fuerza bruta. Deep Blue era capaz de evaluar 200 millones de posiciones por segundo.",
+            source: "IBM Newsroom",
+            url: "https://www.ibm.com/ibm/history/ibm100/us/en/icons/deepblue/"
+        },
+        { 
+            year: "2012", 
+            title: "AlexNet y el Big Bang de la IA", 
+            img: "https://images.unsplash.com/photo-1620712943543-bcc4628c9759?auto=format&fit=crop&q=80&w=800",
+            desc: "Redes Neuronales Convolucionales (CNN).", 
+            technical: "Alex Krizhevsky y su equipo ganaron la competencia ImageNet por un margen masivo utilizando GPUs para entrenar una red neuronal profunda. Este evento convenció a la comunidad científica de que el Deep Learning era el camino a seguir para la visión por computadora y la IA general.",
+            source: "Communications of the ACM",
+            url: "https://cacm.acm.org/magazines/2017/6/217740-imagenet-classification-with-deep-convolutional-neural-networks/fulltext"
+        },
+        { 
+            year: "2017", 
+            title: "Arquitectura Transformer", 
+            img: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=800",
+            desc: "Attention Is All You Need.", 
+            technical: "Investigadores de Google publicaron un paper que introdujo el mecanismo de 'Atención'. A diferencia de las redes anteriores, los Transformers pueden procesar palabras en relación con todas las demás palabras de una oración al mismo tiempo. Es la arquitectura en la que se basan todos los modelos actuales (GPT, Claude, Gemini).",
+            source: "Google Research",
+            url: "https://research.google/pubs/attention-is-all-you-need/"
+        },
+        { 
+            year: "2022", 
+            title: "ChatGPT y RLHF", 
+            img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800",
+            desc: "La IA se vuelve conversacional.", 
+            technical: "OpenAI lanzó ChatGPT, utilizando Aprendizaje por Refuerzo a partir de la Retroalimentación Humana (RLHF). Esta técnica permitió que el modelo no solo predijera la siguiente palabra, sino que siguiera instrucciones y fuera útil, seguro y coherente para el usuario final.",
+            source: "OpenAI Blog",
+            url: "https://openai.com/blog/chatgpt"
+        },
+        { 
+            year: "2025-2026", 
+            title: "La Era de los Agentes", 
+            img: "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?auto=format&fit=crop&q=80&w=800",
+            desc: "De los Chatbots a los Agentes de Acción.", 
+            technical: "La tendencia actual se centra en modelos con capacidad de razonamiento lógico extendido (o1) y autonomía para ejecutar tareas en computadoras (Computer Use). La IA ya no solo genera texto, sino que planifica, depura código y utiliza herramientas externas para completar objetivos complejos.",
+            source: "MIT Technology Review",
+            url: "https://www.technologyreview.com/2024/01/04/1086046/whats-next-for-ai-in-2024/"
+        }
+    ];
+
+    const target = document.getElementById('timeline-target');
+    const modal = document.getElementById('modal');
+
+    aiEvents.forEach((ev, i) => {
+        const side = i % 2 === 0 ? 'left-event' : 'right-event';
+        const card = `
+            <div class="event-wrapper ${side}">
+                <div class="dot"></div>
+                <div class="event-card">
+                    <img src="${ev.img}" alt="${ev.title}" loading="lazy">
+                    <div class="card-body">
+                        <span class="year-label">${ev.year}</span>
+                        <h3 style="margin: 5px 0;">${ev.title}</h3>
+                        <p style="margin: 0;">${ev.desc}</p>
+                        <button class="btn-expand" onclick="openDetails(${i})">DATOS TÉCNICOS Y CITAS</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        target.innerHTML += card;
+    });
+
+    function openDetails(index) {
+        const data = aiEvents[index];
+        document.getElementById('modal-title').innerText = data.title;
+        document.getElementById('modal-detail').innerHTML = `
+            <strong>Resumen Técnico:</strong><br>${data.technical}
+        `;
+        document.getElementById('modal-links').innerHTML = `
+            <a href="${data.url}" target="_blank" class="cite-link">
+                🔗 Fuente Original: ${data.source}
+            </a>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    document.querySelector('.close-modal').onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if(e.target == modal) modal.style.display = 'none'; }
+</script>
+
+</body>
+</html>
